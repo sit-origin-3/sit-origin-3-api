@@ -1,4 +1,4 @@
-name: Deploy API
+name: Deploy Backend
 
 on:
   push:
@@ -7,14 +7,27 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+
+    runs-on: ubuntu-latest
 
     steps:
-      - run: |
-          cd /opt/apps/project-api
-          git pull
 
-          cd /opt/apps/deployment
-          docker compose up -d --build backend
+      - name: Deploy
 
-          docker compose exec -T backend npx prisma migrate deploy
+        uses: appleboy/ssh-action@v1.2.0
+
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          script: |
+            cd /opt/project/backend
+
+            git pull origin main
+
+            cd /opt/project/deployment
+
+            docker compose up -d --build backend
+
+            docker compose exec -T backend npx prisma migrate deploy
