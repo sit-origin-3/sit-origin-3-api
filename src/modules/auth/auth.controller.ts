@@ -28,12 +28,6 @@ export async function login(
     { expiresIn: config.jwtExpiresIn }
   )
 
-  void reply.setCookie("token", token, {
-    httpOnly: true,
-    path: "/",
-    maxAge: 60 * 60,
-  })
-
   return reply.send({
     token,
     user: {
@@ -47,10 +41,4 @@ export async function login(
       points: user.points,
     },
   })
-}
-
-// POST /auth/logout
-export async function logout(_req: FastifyRequest, reply: FastifyReply) {
-  void reply.clearCookie("token", { path: "/" })
-  return reply.send({ message: "Logged out" })
 }

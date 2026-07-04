@@ -40,16 +40,20 @@ export async function getMe(req: FastifyRequest, reply: FastifyReply) {
 // GET /users/code/:code
 export async function getUserByCode(
   req: FastifyRequest<{ Params: Static<typeof GetUserByCodeParams> }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const user = await prisma.appUser.findUnique({
     where: { userCode: req.params.code },
     select: {
       id: true,
+      email: true,
       firstname: true,
       lastname: true,
       nickname: true,
       userCode: true,
+      role: true,
+      major: true,
+      points: true,
     },
   })
 

@@ -3,7 +3,6 @@ import "./types/index.js"
 import Fastify from "fastify"
 import { corsPlugin } from "./plugins/cors.js"
 import { jwtPlugin } from "./plugins/jwt.js"
-import { cookiePlugin } from "./plugins/cookie.js"
 import { authRoutes } from "./modules/auth/auth.route.js"
 import { usersRoutes } from "./modules/users/users.route.js"
 import { pointsRoutes } from "./modules/points/points.route.js"
@@ -15,7 +14,6 @@ const app = Fastify({ logger: true })
 
 await app.register(corsPlugin)
 await app.register(jwtPlugin)
-await app.register(cookiePlugin)
 
 await app.register(authRoutes,        { prefix: "/auth" })
 await app.register(usersRoutes,       { prefix: "/users" })

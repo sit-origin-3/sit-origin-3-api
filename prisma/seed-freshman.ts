@@ -102,6 +102,7 @@ async function main() {
         userCode,
         role,
         major,
+        points: role === "STAFF" || role === "ADMIN" ? 100 : 0,
         group: { connect: { name: groupName } },
       },
     })
