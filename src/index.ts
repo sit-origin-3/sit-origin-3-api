@@ -2,6 +2,7 @@ import "dotenv/config"
 import "./types/index.js"
 import Fastify from "fastify"
 import { corsPlugin } from "./plugins/cors.js"
+import { cookiePlugin } from "./plugins/cookie.js"
 import { jwtPlugin } from "./plugins/jwt.js"
 import { authRoutes } from "./modules/auth/auth.route.js"
 import { usersRoutes } from "./modules/users/users.route.js"
@@ -13,6 +14,7 @@ import { config } from "./config.js"
 const app = Fastify({ logger: true })
 
 await app.register(corsPlugin)
+await app.register(cookiePlugin)
 await app.register(jwtPlugin)
 
 await app.register(authRoutes,        { prefix: "/auth" })
