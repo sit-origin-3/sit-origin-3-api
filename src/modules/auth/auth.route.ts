@@ -8,4 +8,7 @@ export async function authRoutes(app: FastifyInstance) {
 
   // POST /auth/login
   server.post("/login", { schema: { body: schema.LoginBody } }, controller.login)
+
+  // POST /auth/logout
+  server.post("/logout", controller.logout)
 }

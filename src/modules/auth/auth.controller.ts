@@ -28,8 +28,14 @@ export async function login(
     { expiresIn: config.jwtExpiresIn }
   )
 
+  reply.setCookie("token", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24,
+  })
+
   return reply.send({
-    token,
     user: {
       id: user.id,
       firstname: user.firstname,
@@ -41,4 +47,10 @@ export async function login(
       points: user.points,
     },
   })
+}
+
+// POST /auth/logout
+export async function logout(_req: FastifyRequest, reply: FastifyReply) {
+  reply.clearCookie("token", { path: "/" })
+  return reply.send({ success: true })
 }
