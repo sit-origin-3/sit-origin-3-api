@@ -8,26 +8,20 @@ on:
 jobs:
   deploy:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
+      - name: Pull latest backend
+        run: |
+          cd /opt/project/backend
+          git pull origin main
 
-      - name: Deploy
+      - name: Build backend
+        run: |
+          cd /opt/project/deployment
+          docker compose up -d --build backend
 
-        uses: appleboy/ssh-action@v1.2.0
-
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-          script: |
-            cd /opt/project/backend
-
-            git pull origin main
-
-            cd /opt/project/deployment
-
-            docker compose up -d --build backend
-
-            docker compose exec -T backend npx prisma migrate deploy
+      - name: Run migrations
+        run: |
+          cd /opt/project/deployment
+          docker compose exec -T backend npx prisma migrate deploy
