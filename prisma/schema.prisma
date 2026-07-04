@@ -1,0 +1,134 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+
+enum UserRole {
+  FRESHY
+  ADMIN
+  STAFF
+}
+
+enum UserMajor {
+  IT
+  CS
+  DSI
+}
+
+enum ActionStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  SCAN_QR
+  MANUAL_SEARCH
+  GIVE_POINTS
+  UPDATE_USER
+}
+
+// -----------------------------------------------------------------------------
+// MODELS (TABLES)
+// -----------------------------------------------------------------------------
+
+model UserGroup {
+  id    Int       @id @default(autoincrement())
+  name  String    @unique @db.VarChar(50)
+  
+  // --- Relations ---
+  users AppUser[]
+
+  @@map("user_groups")
+}
+
+model AppUser {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique @db.VarChar(255)
+  altEmail  String?    @map("alt_email") @db.VarChar(255)
+  password  String     @db.VarChar(255)
+  phoneNo   String?    @map("phone_no") @db.VarChar(20)
+  studentId String?    @unique @map("student_id") @db.VarChar(20)
+  firstname String     @db.VarChar(255)
+  lastname  String     @db.VarChar(255)
+  nickname  String     @db.VarChar(255)
+  userCode  String     @unique @map("user_code") @db.VarChar(4)
+  role      UserRole   @default(FRESHY)
+  major     UserMajor
+  groupId   Int        @map("group_id")
+  points    Int        @default(0)
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamp(0)
+
+  // --- Relations ---
+  group          UserGroup          @relation(fields: [groupId], references: [id])
+  givenPoints    PointTransaction[] @relation("GiverRelation")
+  receivedPoints PointTransaction[] @relation("ReceiverRelation")
+  auditsAsActor  AuditLog[]         @relation("ActorRelation")
+  auditsAsTarget AuditLog[]         @relation("TargetRelation")
+  sessions       UserSession[]
+
+  @@map("app_user")
+}
+
+model PointTransaction {
+  id         Int          @id @default(autoincrement())
+  giverId    Int          @map("giver_id")
+  receiverId Int          @map("receiver_id")
+  amount     Int
+  status     ActionStatus @default(SUCCESS)
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamp(0)
+
+  // --- Relations ---
+  giver    AppUser @relation("GiverRelation", fields: [giverId], references: [id])
+  receiver AppUser @relation("ReceiverRelation", fields: [receiverId], references: [id])
+
+  @@map("point_transactions")
+}
+
+model AuditLog {
+  id        Int          @id @default(autoincrement())
+  actorId   Int          @map("actor_id")
+  action    AuditAction
+  status    ActionStatus @default(SUCCESS)
+  targetId  Int?         @map("target_id")
+  metadata  Json?
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamp(0)
+
+  // --- Relations ---
+  actor  AppUser  @relation("ActorRelation", fields: [actorId], references: [id])
+  target AppUser? @relation("TargetRelation", fields: [targetId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model UserSession {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  refreshToken String   @unique @map("refresh_token")
+  expiresAt    DateTime @map("expires_at") @db.Timestamp(0)
+  isRevoked    Boolean  @default(false) @map("is_revoked")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+
+  // --- Relations ---
+  user AppUser @relation(fields: [userId], references: [id])
+
+  @@map("user_sessions")
+}
+
+model SystemConfig {
+  key       String   @id @db.VarChar(50)
+  value     String   @db.Text
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("system_configs")
+}
