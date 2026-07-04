@@ -34,7 +34,7 @@ export async function getMe(req: FastifyRequest, reply: FastifyReply) {
   })
 
   if (!user) return reply.code(404).send({ error: "User not found" })
-  return reply.send(user)
+  return reply.send({ ...user, group: user.group.name })
 }
 
 // GET /users/code/:code
@@ -54,9 +54,10 @@ export async function getUserByCode(
       role: true,
       major: true,
       points: true,
+      group: { select: { name: true } },
     },
   })
 
   if (!user) return reply.code(404).send({ error: "User not found" })
-  return reply.send(user)
+  return reply.send({ ...user, group: user.group.name })
 }

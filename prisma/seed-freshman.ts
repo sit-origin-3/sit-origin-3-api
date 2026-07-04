@@ -65,7 +65,7 @@ async function main() {
 
   for (let i = 1; i < rows.length; i++) {
     const columns = rows[i]?.split(",")
-    if (!columns || columns.length < 12) continue
+    if (!columns || columns.length < 13) continue
 
     const email     = columns[0]?.trim() ?? ""
     const altEmail  = columns[1]?.trim() || null
@@ -78,6 +78,9 @@ async function main() {
     const role      = columns[9]?.trim() ?? "FRESHY"
     const major     = columns[10]?.trim() ?? "IT"
     const groupName = toGroupName(columns[11]?.trim() ?? "")
+    const session   = role === "ADMIN" ? "ADMIN"
+                    : role === "STAFF" ? "STAFF"
+                    : (columns[12]?.trim() ?? "A") === "B" ? "B" : "A"
 
     let userCode = columns[8]?.trim() ?? ""
     if (!userCode) {
@@ -89,7 +92,7 @@ async function main() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (prisma.appUser.upsert as any)({
       where: { email },
-      update: {},
+      update: { session },
       create: {
         email,
         altEmail,
@@ -101,6 +104,7 @@ async function main() {
         nickname,
         userCode,
         role,
+        session,
         major,
         points: role === "STAFF" || role === "ADMIN" ? 100 : 0,
         group: { connect: { name: groupName } },

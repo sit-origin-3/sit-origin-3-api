@@ -32,10 +32,16 @@ enum ActionStatus {
 enum AuditAction {
   LOGIN
   LOGOUT
-  SCAN_QR
-  MANUAL_SEARCH
+  UPDATE_CONFIG
   GIVE_POINTS
-  UPDATE_USER
+  UPDATE_POINT
+}
+
+enum EventSession {
+  A
+  B
+  ADMIN
+  STAFF
 }
 
 // -----------------------------------------------------------------------------
@@ -63,7 +69,8 @@ model AppUser {
   lastname  String     @db.VarChar(255)
   nickname  String     @db.VarChar(255)
   userCode  String     @unique @map("user_code") @db.VarChar(4)
-  role      UserRole   @default(FRESHY)
+  role      UserRole     @default(FRESHY)
+  session   EventSession @default(A)
   major     UserMajor
   groupId   Int        @map("group_id")
   points    Int        @default(0)
