@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify"
 import type { Static } from "@sinclair/typebox"
 import { prisma } from "../../db.js"
+import { createAuditLog } from "../../lib/audit.js"
 import type { GivePointsBody, AssignPointsBody } from "./points.schema.js"
 export async function givePoints(
   req: FastifyRequest<{ Body: Static<typeof GivePointsBody> }>,
@@ -8,6 +9,14 @@ export async function givePoints(
 ) {
   const { receiverCode, amount } = req.body
   const giverId = req.user.id
+
+  const allowConfig = await prisma.systemConfig.findUnique({
+    where: { key: "ALLOW_GIVE_POINT" },
+  })
+  if (allowConfig?.value === "false") {
+    return reply.code(403).send({ error: "Giving points is currently disabled" })
+  }
+
   // 1. หา giver (คนให้แต้ม) จาก id ใน JWT
   const giver = await prisma.appUser.findUnique({ where: { id: giverId } })
   if (!giver) return reply.code(404).send({ error: "Giver not found" })
@@ -38,9 +47,19 @@ export async function givePoints(
       where: { id: receiver.id },
       data: { points: { increment: amount } },
     }),
+    // บันทึก transaction history
+    prisma.pointTransaction.create({
+      data: { giverId, receiverId: receiver.id, amount },
+    }),
   ])
 
-  // 6. return ผลลัพธ์
+  await createAuditLog({
+    actorId: giverId,
+    action: "GIVE_POINTS",
+    targetId: receiver.id,
+    metadata: { amount },
+  })
+
   return reply.send({ success: true, receiverCode, amount })
 }
 
@@ -56,6 +75,13 @@ export async function assignPoints(
   const updated = await prisma.appUser.update({
     where: { userCode },
     data: { points: { increment: amount } },
+  })
+
+  await createAuditLog({
+    actorId: req.user.id,
+    action: "UPDATE_POINT",
+    targetId: user.id,
+    metadata: { amount },
   })
 
   return reply.send({ success: true, userCode, points: updated.points })

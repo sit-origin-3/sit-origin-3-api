@@ -17,11 +17,11 @@ await app.register(corsPlugin)
 await app.register(cookiePlugin)
 await app.register(jwtPlugin)
 
-await app.register(authRoutes,        { prefix: "/auth" })
-await app.register(usersRoutes,       { prefix: "/users" })
-await app.register(pointsRoutes,      { prefix: "/points" })
-await app.register(leaderboardRoutes, { prefix: "/leaderboard" })
-await app.register(configsRoutes,     { prefix: "/configs" })
+await app.register(authRoutes, { prefix: "/api/auth" })
+await app.register(usersRoutes, { prefix: "/api/users" })
+await app.register(pointsRoutes, { prefix: "/api/points" })
+await app.register(leaderboardRoutes, { prefix: "/api/leaderboard" })
+await app.register(configsRoutes, { prefix: "/api/configs" })
 
 app.listen({ port: config.port, host: "0.0.0.0" }, (err) => {
   if (err) {

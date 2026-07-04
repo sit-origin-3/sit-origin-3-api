@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from "fastify"
 import type { Static } from "@sinclair/typebox"
 import { prisma } from "../../db.js"
 import { config } from "../../config.js"
+import { createAuditLog } from "../../lib/audit.js"
 import type { LoginBody } from "./auth.schema.js"
 
 // POST /auth/login
@@ -22,6 +23,8 @@ export async function login(
   if (!user) {
     return reply.code(401).send({ error: "Invalid credentials" })
   }
+
+  await createAuditLog({ actorId: user.id, action: "LOGIN" })
 
   const token = req.server.jwt.sign(
     { id: user.id, role: user.role },
@@ -50,7 +53,13 @@ export async function login(
 }
 
 // POST /auth/logout
-export async function logout(_req: FastifyRequest, reply: FastifyReply) {
+export async function logout(req: FastifyRequest, reply: FastifyReply) {
+  try {
+    await req.jwtVerify()
+    await createAuditLog({ actorId: req.user.id, action: "LOGOUT" })
+  } catch {
+    // token หมดอายุหรือไม่มี ก็ยัง logout ได้
+  }
   reply.clearCookie("token", { path: "/" })
   return reply.send({ success: true })
 }
