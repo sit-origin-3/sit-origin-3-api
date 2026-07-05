@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import * as fs from "fs"
 import * as path from "path"
 import { fileURLToPath } from "url"
+import bcrypt from "bcrypt"
 import "dotenv/config"
 
 const adapter = new PrismaPg(process.env["DATABASE_URL"] ?? "")
@@ -67,9 +68,10 @@ async function main() {
     const columns = rows[i]?.split(",")
     if (!columns || columns.length < 13) continue
 
-    const email     = columns[0]?.trim() ?? ""
-    const altEmail  = columns[1]?.trim() || null
-    const password  = columns[2]?.trim() ?? ""
+    const email       = columns[0]?.trim() ?? ""
+    const altEmail    = columns[1]?.trim() || null
+    const rawPassword = columns[2]?.trim() ?? ""
+    const password    = await bcrypt.hash(rawPassword, 10)
     const phoneNo   = columns[3]?.trim() || null
     const studentId = columns[4]?.trim() || null
     const firstname = columns[5]?.trim() ?? ""

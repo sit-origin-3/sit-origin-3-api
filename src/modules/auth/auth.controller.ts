@@ -1,5 +1,6 @@
 import type { FastifyRequest, FastifyReply } from "fastify"
 import type { Static } from "@sinclair/typebox"
+import bcrypt from "bcrypt"
 import { prisma } from "../../db.js"
 import { config } from "../../config.js"
 import { createAuditLog } from "../../lib/audit.js"
@@ -15,12 +16,11 @@ export async function login(
   const user = await prisma.appUser.findFirst({
     where: {
       OR: [{ email: identifier }, { studentId: identifier }],
-      password,
     },
     include: { group: true },
   })
 
-  if (!user) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     return reply.code(401).send({ error: "Invalid credentials" })
   }
 
@@ -36,6 +36,7 @@ export async function login(
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24,
+    secure: process.env["NODE_ENV"] === "production",
   })
 
   return reply.send({

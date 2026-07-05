@@ -10,9 +10,11 @@ export async function givePoints(
   const { receiverCode, amount } = req.body
   const giverId = req.user.id
 
-  const allowConfig = await prisma.systemConfig.findUnique({
-    where: { key: "ALLOW_GIVE_POINT" },
-  })
+  const [allowConfig, limitConfig] = await Promise.all([
+    prisma.systemConfig.findUnique({ where: { key: "ALLOW_GIVE_POINT" } }),
+    prisma.systemConfig.findUnique({ where: { key: "MAX_POINTS_PER_FRESHY" } }),
+  ])
+
   if (allowConfig?.value === "false") {
     return reply.code(403).send({ error: "Giving points is currently disabled" })
   }
@@ -34,6 +36,21 @@ export async function givePoints(
   // 4. เช็คว่า receiver เป็น FRESHY เท่านั้น
   if (receiver.role !== "FRESHY")
     return reply.code(400).send({ error: "Can only give points to FRESHY" })
+
+  // 4.5 เช็ค limit ว่า giver โอนให้ receiver ไปแล้วเท่าไหร่
+  if (limitConfig?.value) {
+    const maxLimit = Number(limitConfig.value)
+    const totalGiven = await prisma.pointTransaction.aggregate({
+      where: { giverId, receiverId: receiver.id },
+      _sum: { amount: true },
+    })
+    const alreadyGiven = totalGiven._sum.amount ?? 0
+    if (alreadyGiven + amount > maxLimit) {
+      return reply.code(400).send({
+        error: `Exceeded limit — already given ${alreadyGiven}/${maxLimit} points to this freshy`,
+      })
+    }
+  }
 
   // 5. ทำ transaction (atomic - ถ้า step ไหน fail ทุกอย่าง rollback)
   await prisma.$transaction([
@@ -74,7 +91,7 @@ export async function assignPoints(
 
   const updated = await prisma.appUser.update({
     where: { userCode },
-    data: { points: { increment: amount } },
+    data: { points: amount },
   })
 
   await createAuditLog({

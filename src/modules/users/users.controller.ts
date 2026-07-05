@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify"
 import type { Static } from "@sinclair/typebox"
 import { prisma } from "../../db.js"
+import { getRankById } from "../../lib/leaderboard.js"
 import type { GetUserByCodeParams } from "./users.schema.js"
 
 const userSelect = {
@@ -56,7 +57,10 @@ export async function getMe(req: FastifyRequest, reply: FastifyReply) {
   })
 
   if (!user) return reply.code(404).send({ error: "User not found" })
-  return reply.send({ ...user, group: user.group.name })
+
+  const rank = user.role === "FRESHY" ? await getRankById(user.id) : null
+
+  return reply.send({ ...user, group: user.group.name, rank })
 }
 
 // GET /users/code/:code

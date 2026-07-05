@@ -1,6 +1,9 @@
 import { Type } from "@sinclair/typebox"
 
-export const ConfigKey = Type.Union([Type.Literal("ALLOW_GIVE_POINT")])
+export const ConfigKey = Type.Union([
+  Type.Literal("ALLOW_GIVE_POINT"),
+  Type.Literal("MAX_POINTS_PER_FRESHY"),
+])
 
 export const UpdateConfigParams = Type.Object({
   key: ConfigKey,
