@@ -48,7 +48,7 @@ export async function login(
       role: user.role,
       group: user.group.name,
       userCode: user.userCode,
-      points: user.points,
+      points: user.role !== "FRESHY" ? user.group.points : user.points,
     },
   })
 }

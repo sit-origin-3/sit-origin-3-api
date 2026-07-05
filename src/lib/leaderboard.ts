@@ -10,34 +10,15 @@ export async function getLeaderboardData() {
       nickname: true,
       points: true,
       group: { select: { name: true } },
-      receivedPoints: {
-        select: { amount: true, createdAt: true },
-        orderBy: { createdAt: "asc" },
-      },
     },
+    orderBy: { points: "desc" },
+    take: 20,
   })
 
-  return users
-    .map((u) => {
-      let cumulative = 0
-      let reachedAt: Date | null = null
-      for (const tx of u.receivedPoints) {
-        cumulative += tx.amount
-        if (cumulative >= u.points) {
-          reachedAt = tx.createdAt
-          break
-        }
-      }
-      const { receivedPoints: _, group, ...rest } = u
-      return { ...rest, group: group.name, reachedAt }
-    })
-    .sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points
-      if (!a.reachedAt) return 1
-      if (!b.reachedAt) return -1
-      return a.reachedAt.getTime() - b.reachedAt.getTime()
-    })
-    .slice(0, 50)
+  return users.map((u) => {
+    const { group, ...rest } = u
+    return { ...rest, group: group.name }
+  })
 }
 
 export async function getRankById(userId: number): Promise<number | null> {

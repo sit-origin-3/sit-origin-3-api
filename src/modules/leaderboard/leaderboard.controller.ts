@@ -1,12 +1,9 @@
 import type { FastifyRequest, FastifyReply } from "fastify"
 import { getLeaderboardData } from "../../lib/leaderboard.js"
 
-// GET /api/leaderboard/stream
-export async function streamLeaderboard(
-  req: FastifyRequest,
-  reply: FastifyReply,
-) {
-  const allowedOrigins = ["http://localhost:5173"]
+const allowedOrigins = ["http://localhost:5173"]
+
+function setSseHeaders(req: FastifyRequest, reply: FastifyReply) {
   const origin = req.headers.origin ?? ""
   const allowOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0]!
   reply.raw.setHeader("Access-Control-Allow-Origin", allowOrigin)
@@ -15,6 +12,11 @@ export async function streamLeaderboard(
   reply.raw.setHeader("Cache-Control", "no-cache")
   reply.raw.setHeader("Connection", "keep-alive")
   reply.raw.flushHeaders()
+}
+
+// GET /api/leaderboard/stream — ADMIN เท่านั้น (เห็นชื่อ)
+export async function streamLeaderboard(req: FastifyRequest, reply: FastifyReply) {
+  setSseHeaders(req, reply)
 
   const send = async () => {
     const users = await getLeaderboardData()
@@ -24,10 +26,22 @@ export async function streamLeaderboard(
 
   await send()
   const interval = setInterval(send, 5000)
+  req.socket.on("close", () => clearInterval(interval))
+  await new Promise(() => {})
+}
 
-  req.socket.on("close", () => {
-    clearInterval(interval)
-  })
+// GET /api/leaderboard/stream/anonymous — ทุก role (ปิดตัวตน เห็นแค่ rank + points)
+export async function streamLeaderboardAnonymous(req: FastifyRequest, reply: FastifyReply) {
+  setSseHeaders(req, reply)
 
+  const send = async () => {
+    const users = await getLeaderboardData()
+    const ranked = users.map((u, i) => ({ rank: i + 1, points: u.points }))
+    reply.raw.write(`data: ${JSON.stringify(ranked)}\n\n`)
+  }
+
+  await send()
+  const interval = setInterval(send, 5000)
+  req.socket.on("close", () => clearInterval(interval))
   await new Promise(() => {})
 }

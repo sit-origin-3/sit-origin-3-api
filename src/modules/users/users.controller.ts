@@ -14,7 +14,7 @@ const userSelect = {
   role: true,
   major: true,
   points: true,
-  group: { select: { name: true } },
+  group: { select: { id: true, name: true, points: true } },
 } as const
 
 // GET /users
@@ -31,12 +31,16 @@ export async function getAllUsers(_req: FastifyRequest, reply: FastifyReply) {
       major: true,
       session: true,
       points: true,
-      group: { select: { name: true } },
+      group: { select: { name: true, points: true } },
     },
     orderBy: { id: "asc" },
   })
 
-  return reply.send(users.map((u) => ({ ...u, group: u.group.name })))
+  return reply.send(users.map((u) => ({
+    ...u,
+    points: u.role !== "FRESHY" ? u.group.points : u.points,
+    group: u.group.name,
+  })))
 }
 
 // GET /users/me
@@ -59,8 +63,9 @@ export async function getMe(req: FastifyRequest, reply: FastifyReply) {
   if (!user) return reply.code(404).send({ error: "User not found" })
 
   const rank = user.role === "FRESHY" ? await getRankById(user.id) : null
+  const points = user.role !== "FRESHY" ? user.group.points : user.points
 
-  return reply.send({ ...user, group: user.group.name, rank })
+  return reply.send({ ...user, points, group: user.group.name, rank })
 }
 
 // GET /users/code/:code
@@ -80,10 +85,14 @@ export async function getUserByCode(
       role: true,
       major: true,
       points: true,
-      group: { select: { name: true } },
+      group: { select: { name: true, points: true } },
     },
   })
 
   if (!user) return reply.code(404).send({ error: "User not found" })
-  return reply.send({ ...user, group: user.group.name })
+  return reply.send({
+    ...user,
+    points: user.role !== "FRESHY" ? user.group.points : user.points,
+    group: user.group.name,
+  })
 }
