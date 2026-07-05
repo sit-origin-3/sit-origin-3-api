@@ -48,11 +48,13 @@ export async function streamLeaderboard(
   req: FastifyRequest,
   reply: FastifyReply,
 ) {
-  reply.header("Content-Type", "text/event-stream")
-  reply.header("Cache-Control", "no-cache")
-  reply.header("Connection", "keep-alive")
-  await reply.send("")
-
+  const origin = req.headers.origin ?? "*"
+  reply.raw.setHeader("Access-Control-Allow-Origin", origin)
+  reply.raw.setHeader("Access-Control-Allow-Credentials", "true")
+  reply.raw.setHeader("Content-Type", "text/event-stream")
+  reply.raw.setHeader("Cache-Control", "no-cache")
+  reply.raw.setHeader("Connection", "keep-alive")
+  reply.raw.flushHeaders()
 
   const send = async () => {
     const users = await getLeaderboardData()
