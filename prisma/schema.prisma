@@ -49,11 +49,13 @@ enum EventSession {
 // -----------------------------------------------------------------------------
 
 model UserGroup {
-  id    Int       @id @default(autoincrement())
-  name  String    @unique @db.VarChar(50)
-  
+  id     String @id @db.VarChar(10)
+  name   String @unique @db.VarChar(100)
+  points Int    @default(0)
+
   // --- Relations ---
-  users AppUser[]
+  users            AppUser[]
+  givenTransactions PointTransaction[]
 
   @@map("user_groups")
 }
@@ -72,7 +74,7 @@ model AppUser {
   role      UserRole     @default(FRESHY)
   session   EventSession @default(A)
   major     UserMajor
-  groupId   Int        @map("group_id")
+  groupId   String     @map("group_id") @db.VarChar(10)
   points    Int        @default(0)
   createdAt DateTime   @default(now()) @map("created_at") @db.Timestamp(0)
 
@@ -90,14 +92,16 @@ model AppUser {
 model PointTransaction {
   id         Int          @id @default(autoincrement())
   giverId    Int          @map("giver_id")
+  stationId  String       @map("station_id") @db.VarChar(10)
   receiverId Int          @map("receiver_id")
   amount     Int
   status     ActionStatus @default(SUCCESS)
   createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamp(0)
 
   // --- Relations ---
-  giver    AppUser @relation("GiverRelation", fields: [giverId], references: [id])
-  receiver AppUser @relation("ReceiverRelation", fields: [receiverId], references: [id])
+  giver    AppUser   @relation("GiverRelation", fields: [giverId], references: [id])
+  station  UserGroup @relation(fields: [stationId], references: [id])
+  receiver AppUser   @relation("ReceiverRelation", fields: [receiverId], references: [id])
 
   @@map("point_transactions")
 }
