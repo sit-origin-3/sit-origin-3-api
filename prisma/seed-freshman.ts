@@ -38,7 +38,7 @@ function toGroupId(raw: string): string {
   throw new Error(`Invalid groupId: ${raw}`)
 }
 
-const STATION_POOL_POINTS = 500
+const STATION_POOL_POINTS = 4000
 
 const GROUP_DEFINITIONS: { id: string; name: string; points: number }[] = [
   { id: "G1", name: "G1", points: 0 },
