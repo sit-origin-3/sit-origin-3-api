@@ -16,6 +16,28 @@ const userSelect = {
   group: { select: { name: true } },
 } as const
 
+// GET /users
+export async function getAllUsers(_req: FastifyRequest, reply: FastifyReply) {
+  const users = await prisma.appUser.findMany({
+    select: {
+      id: true,
+      email: true,
+      firstname: true,
+      lastname: true,
+      nickname: true,
+      userCode: true,
+      role: true,
+      major: true,
+      session: true,
+      points: true,
+      group: { select: { name: true } },
+    },
+    orderBy: { id: "asc" },
+  })
+
+  return reply.send(users.map((u) => ({ ...u, group: u.group.name })))
+}
+
 // GET /users/me
 export async function getMe(req: FastifyRequest, reply: FastifyReply) {
   const user = await prisma.appUser.findUnique({
