@@ -31,12 +31,13 @@ export async function login(
     { expiresIn: config.jwtExpiresIn }
   )
 
+  const isCrossOrigin = process.env["NODE_ENV"] === "production"
   reply.setCookie("token", token, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: isCrossOrigin ? "none" : "lax",
     path: "/",
     maxAge: 60 * 60 * 24,
-    secure: process.env["NODE_ENV"] === "production",
+    secure: isCrossOrigin,
   })
 
   return reply.send({
