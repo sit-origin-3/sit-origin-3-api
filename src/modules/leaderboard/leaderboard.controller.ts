@@ -13,6 +13,7 @@ function setSseHeaders(req: FastifyRequest, reply: FastifyReply) {
   reply.raw.setHeader("Connection", "keep-alive")
   reply.raw.setHeader("X-Accel-Buffering", "no")
   reply.raw.flushHeaders()
+  req.socket.setNoDelay(true)
 }
 
 // GET /api/leaderboard/stream — ADMIN เท่านั้น (เห็นชื่อ)
