@@ -21,6 +21,14 @@ export async function login(
   })
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (user) {
+      await createAuditLog({
+        actorId: user.id,
+        action: "LOGIN",
+        status: "FAILED",
+        metadata: { reason: "wrong_password" },
+      })
+    }
     return reply.code(401).send({ error: "Invalid credentials" })
   }
 
