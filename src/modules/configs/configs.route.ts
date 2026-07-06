@@ -8,7 +8,7 @@ export async function configsRoutes(app: FastifyInstance) {
   const server = app.withTypeProvider<TypeBoxTypeProvider>()
 
   // GET /api/configs
-  server.get("/", { preHandler: [hook.requireRole("ADMIN")] }, controller.getConfigs)
+  server.get("/", { preHandler: [hook.requireRole("ADMIN", "STAFF")] }, controller.getConfigs)
 
   // PATCH /api/configs/:key
   server.patch(

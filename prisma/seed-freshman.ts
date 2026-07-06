@@ -30,10 +30,15 @@ async function getUniqueUserCode(usedCodes: Set<string>): Promise<string> {
   return code
 }
 
+const NUM_TO_GROUP_ID: Record<number, string> = {
+  1: "A1", 2: "A2", 3: "A3", 4: "A4", 5: "A5",
+  6: "B1", 7: "B2", 8: "B3", 9: "B4", 10: "B5",
+}
+
 function toGroupId(raw: string): string {
   const num = parseInt(raw, 10)
-  if (!isNaN(num) && num >= 1 && num <= 10) return `G${num}`
-  if (/^[GS][1-9][0-9]?$/.test(raw) || /^I[1-2]$/.test(raw) || raw === "ADMIN")
+  if (!isNaN(num) && NUM_TO_GROUP_ID[num]) return NUM_TO_GROUP_ID[num]!
+  if (/^[AB][1-5]$/.test(raw) || /^S[1-5]$/.test(raw) || /^I[1-2]$/.test(raw) || raw === "ADMIN")
     return raw
   throw new Error(`Invalid groupId: ${raw}`)
 }
@@ -41,16 +46,16 @@ function toGroupId(raw: string): string {
 const STATION_POOL_POINTS = 4000
 
 const GROUP_DEFINITIONS: { id: string; name: string; points: number }[] = [
-  { id: "G1", name: "G1", points: 0 },
-  { id: "G2", name: "G2", points: 0 },
-  { id: "G3", name: "G3", points: 0 },
-  { id: "G4", name: "G4", points: 0 },
-  { id: "G5", name: "G5", points: 0 },
-  { id: "G6", name: "G6", points: 0 },
-  { id: "G7", name: "G7", points: 0 },
-  { id: "G8", name: "G8", points: 0 },
-  { id: "G9", name: "G9", points: 0 },
-  { id: "G10", name: "G10", points: 0 },
+  { id: "A1", name: "CHEETAH",      points: 0 },
+  { id: "A2", name: "HORSE",        points: 0 },
+  { id: "A3", name: "SHEEP",        points: 0 },
+  { id: "A4", name: "SNAKE",        points: 0 },
+  { id: "A5", name: "GAZELLE",      points: 0 },
+  { id: "B1", name: "FENNEC FOX",   points: 0 },
+  { id: "B2", name: "SLOTH",        points: 0 },
+  { id: "B3", name: "BEAVER",       points: 0 },
+  { id: "B4", name: "ARCTIC SHREW", points: 0 },
+  { id: "B5", name: "QUOKKA",       points: 0 },
   { id: "S1", name: "สืบคดี", points: STATION_POOL_POINTS },
   { id: "S2", name: "สปาย", points: STATION_POOL_POINTS },
   { id: "S3", name: "ทำตามพี่บอก", points: STATION_POOL_POINTS },
