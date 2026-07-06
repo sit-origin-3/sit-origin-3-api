@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify"
 import { getLeaderboardData } from "../../lib/leaderboard.js"
 
-const allowedOrigins = ["http://localhost:5173", "https://SIT-Origin.sit.kmutt.ac.th"]
+const allowedOrigins = ["http://localhost:5173", "https://localhost:5173", "https://SIT-Origin.sit.kmutt.ac.th"]
 
 function setSseHeaders(req: FastifyRequest, reply: FastifyReply) {
   const origin = req.headers.origin ?? ""
