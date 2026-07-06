@@ -17,6 +17,7 @@ function setSseHeaders(req: FastifyRequest, reply: FastifyReply) {
 
 // GET /api/leaderboard/stream — ADMIN เท่านั้น (เห็นชื่อ)
 export async function streamLeaderboard(req: FastifyRequest, reply: FastifyReply) {
+  reply.hijack()
   setSseHeaders(req, reply)
 
   const send = async () => {
@@ -33,6 +34,7 @@ export async function streamLeaderboard(req: FastifyRequest, reply: FastifyReply
 
 // GET /api/leaderboard/stream/anonymous — ทุก role (ปิดตัวตน เห็นแค่ rank + points)
 export async function streamLeaderboardAnonymous(req: FastifyRequest, reply: FastifyReply) {
+  reply.hijack()
   setSseHeaders(req, reply)
 
   const send = async () => {
