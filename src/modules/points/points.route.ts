@@ -7,12 +7,12 @@ import * as schema from "./points.schema.js"
 export async function pointsRoutes(app: FastifyInstance) {
   const server = app.withTypeProvider<TypeBoxTypeProvider>()
   server.post(
-    "/give",
+    "/give-bulk",
     {
-      schema: { body: schema.GivePointsBody },
+      schema: { body: schema.GiveBulkPointsBody },
       preHandler: [hook.requireRole("STAFF", "ADMIN")],
     },
-    controller.givePoints,
+    controller.giveBulkPoints,
   )
 
   server.post(

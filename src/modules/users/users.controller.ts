@@ -36,36 +36,65 @@ export async function getAllUsers(_req: FastifyRequest, reply: FastifyReply) {
     orderBy: { id: "asc" },
   })
 
-  return reply.send(users.map((u) => ({
-    ...u,
-    points: u.role !== "FRESHY" ? u.group.points : u.points,
-    group: u.group.name,
-  })))
+  return reply.send(
+    users.map((u) => ({
+      ...u,
+      points: u.role !== "FRESHY" ? u.group.points : u.points,
+      group: u.group.name,
+    })),
+  )
 }
+
+const txPersonSelect = {
+  nickname: true,
+  major: true,
+  group: { select: { id: true, name: true } },
+} as const
 
 // GET /users/me
 export async function getMe(req: FastifyRequest, reply: FastifyReply) {
   const user = await prisma.appUser.findUnique({
     where: { id: req.user.id },
-    select: {
-      ...userSelect,
-      receivedPoints: {
-        select: {
-          amount: true,
-          createdAt: true,
-          giver: { select: { nickname: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      },
-    },
+    select: { ...userSelect },
   })
 
   if (!user) return reply.code(404).send({ error: "User not found" })
 
   const rank = user.role === "FRESHY" ? await getRankById(user.id) : null
   const points = user.role !== "FRESHY" ? user.group.points : user.points
+  const { group, ...rest } = user
 
-  return reply.send({ ...user, points, group: user.group.name, rank })
+  const txWhere =
+    user.role === "FRESHY"
+      ? { receiverId: user.id }
+      : { stationId: user.group.id }
+
+  const transactions = await prisma.pointTransaction.findMany({
+    where: txWhere,
+    select: {
+      amount: true,
+      createdAt: true,
+      giver: { select: txPersonSelect },
+      receiver: { select: txPersonSelect },
+    },
+    orderBy: { createdAt: "desc" },
+  })
+
+  const history = transactions.map((tx) => ({
+    action: user.role === "FRESHY" ? "receive" : "give",
+    amount: tx.amount,
+    createdAt: tx.createdAt,
+    giver: tx.giver,
+    receiver: tx.receiver,
+  }))
+
+  return reply.send({
+    ...rest,
+    points,
+    group: { id: group.id, name: group.name },
+    rank,
+    history,
+  })
 }
 
 // GET /users/code/:code

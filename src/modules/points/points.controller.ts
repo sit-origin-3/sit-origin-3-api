@@ -2,12 +2,12 @@ import type { FastifyRequest, FastifyReply } from "fastify"
 import type { Static } from "@sinclair/typebox"
 import { prisma } from "../../db.js"
 import { createAuditLog } from "../../lib/audit.js"
-import type { GivePointsBody, AssignPointsBody } from "./points.schema.js"
-export async function givePoints(
-  req: FastifyRequest<{ Body: Static<typeof GivePointsBody> }>,
+import type { GiveBulkPointsBody, AssignPointsBody } from "./points.schema.js"
+export async function giveBulkPoints(
+  req: FastifyRequest<{ Body: Static<typeof GiveBulkPointsBody> }>,
   reply: FastifyReply,
 ) {
-  const { receiverCode, amount } = req.body
+  const { receiverCodes, amount } = req.body
   const giverId = req.user.id
 
   const [allowConfig, limitConfig] = await Promise.all([
@@ -19,7 +19,6 @@ export async function givePoints(
     return reply.code(403).send({ error: "Giving points is currently disabled" })
   }
 
-  // 1. หา giver พร้อม group (station pool)
   const giver = await prisma.appUser.findUnique({
     where: { id: giverId },
     include: { group: true },
@@ -27,61 +26,75 @@ export async function givePoints(
   if (!giver) return reply.code(404).send({ error: "Giver not found" })
 
   const station = giver.group
-  // 2. เช็คว่า pool ของ station พอมั้ย
-  if (station.points < amount)
-    return reply.code(400).send({ error: "Not enough station pool points" })
+  const totalCost = amount * receiverCodes.length
 
-  // 3. หา receiver จาก userCode
-  const receiver = await prisma.appUser.findUnique({
-    where: { userCode: receiverCode },
+  if (station.points < totalCost) {
+    return reply.code(400).send({
+      error: `Not enough station pool points (need ${totalCost}, have ${station.points})`,
+    })
+  }
+
+  // หา receivers ทั้งหมดพร้อมกัน
+  const receivers = await prisma.appUser.findMany({
+    where: { userCode: { in: receiverCodes }, role: "FRESHY" },
   })
-  if (!receiver) return reply.code(404).send({ error: "User not found" })
 
-  // 4. เช็คว่า receiver เป็น FRESHY เท่านั้น
-  if (receiver.role !== "FRESHY")
-    return reply.code(400).send({ error: "Can only give points to FRESHY" })
+  // เช็คว่า code ทุกตัวเจอและเป็น FRESHY
+  const foundCodes = new Set(receivers.map((r) => r.userCode))
+  const invalidCodes = receiverCodes.filter((c) => !foundCodes.has(c))
+  if (invalidCodes.length > 0) {
+    return reply.code(400).send({ error: `Invalid or non-FRESHY codes: ${invalidCodes.join(", ")}` })
+  }
 
-  // 4.5 เช็ค limit ต่อ freshy ต่อ station
+  // เช็ค limit ต่อ freshy ต่อ station (ถ้ามี config)
   if (limitConfig?.value) {
     const maxLimit = Number(limitConfig.value)
-    const totalGiven = await prisma.pointTransaction.aggregate({
-      where: { stationId: station.id, receiverId: receiver.id },
+    const totals = await prisma.pointTransaction.groupBy({
+      by: ["receiverId"],
+      where: { stationId: station.id, receiverId: { in: receivers.map((r) => r.id) } },
       _sum: { amount: true },
     })
-    const alreadyGiven = totalGiven._sum.amount ?? 0
-    if (alreadyGiven + amount > maxLimit) {
+    const givenMap = new Map(totals.map((t) => [t.receiverId, t._sum.amount ?? 0]))
+
+    const exceeded = receivers.filter((r) => (givenMap.get(r.id) ?? 0) + amount > maxLimit)
+    if (exceeded.length > 0) {
       return reply.code(400).send({
-        error: `Exceeded limit — already given ${alreadyGiven}/${maxLimit} points to this freshy from this station`,
+        error: `Exceeded limit for: ${exceeded.map((r) => r.userCode).join(", ")}`,
       })
     }
   }
 
-  // 5. ทำ transaction (atomic)
+  // Atomic transaction — หักจาก pool ครั้งเดียว เพิ่มแต้มทุกคน
   await prisma.$transaction([
-    // ลดแต้ม pool ของ station
     prisma.userGroup.update({
       where: { id: station.id },
-      data: { points: { decrement: amount } },
+      data: { points: { decrement: totalCost } },
     }),
-    // เพิ่มแต้ม receiver
-    prisma.appUser.update({
-      where: { id: receiver.id },
-      data: { points: { increment: amount } },
-    }),
-    // บันทึก transaction history พร้อม stationId
-    prisma.pointTransaction.create({
-      data: { giverId, stationId: station.id, receiverId: receiver.id, amount },
-    }),
+    ...receivers.map((r) =>
+      prisma.appUser.update({
+        where: { id: r.id },
+        data: { points: { increment: amount } },
+      }),
+    ),
+    ...receivers.map((r) =>
+      prisma.pointTransaction.create({
+        data: { giverId, stationId: station.id, receiverId: r.id, amount },
+      }),
+    ),
   ])
 
-  await createAuditLog({
-    actorId: giverId,
-    action: "GIVE_POINTS",
-    targetId: receiver.id,
-    metadata: { amount },
-  })
+  await Promise.all(
+    receivers.map((r) =>
+      createAuditLog({
+        actorId: giverId,
+        action: "GIVE_POINTS",
+        targetId: r.id,
+        metadata: { amount },
+      }),
+    ),
+  )
 
-  return reply.send({ success: true, receiverCode, amount })
+  return reply.send({ success: true, amount, receivers: receivers.map((r) => r.userCode) })
 }
 
 export async function assignPoints(

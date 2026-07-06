@@ -1,7 +1,7 @@
 import { Type } from "@sinclair/typebox"
 
-export const GivePointsBody = Type.Object({
-  receiverCode: Type.String({ minLength: 4, maxLength: 4 }),
+export const GiveBulkPointsBody = Type.Object({
+  receiverCodes: Type.Array(Type.String({ minLength: 4, maxLength: 4 }), { minItems: 1 }),
   amount: Type.Number({ minimum: 1 }),
 })
 
