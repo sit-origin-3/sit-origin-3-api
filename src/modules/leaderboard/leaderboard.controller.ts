@@ -9,9 +9,9 @@ async function getShowLeaderboard(): Promise<boolean> {
 
 // GET /api/leaderboard — ADMIN เท่านั้น (เห็นชื่อเสมอ)
 export async function getLeaderboard(_req: FastifyRequest, reply: FastifyReply) {
-  const [users, showLeaderboard] = await Promise.all([getLeaderboardData(), getShowLeaderboard()])
+  const users = await getLeaderboardData()
   const entries = users.map((u, i) => ({ rank: i + 1, ...u }))
-  return reply.send({ showLeaderboard, entries })
+  return reply.send(entries)
 }
 
 // GET /api/leaderboard/anonymous — ทุก role (ชื่อขึ้นอยู่กับ config)
