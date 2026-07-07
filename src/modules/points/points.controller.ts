@@ -26,13 +26,6 @@ export async function giveBulkPoints(
   if (!giver) return reply.code(404).send({ error: "Giver not found" })
 
   const station = giver.group
-  const totalCost = amount * receiverCodes.length
-
-  if (station.points < totalCost) {
-    return reply.code(400).send({
-      error: `Not enough station pool points (need ${totalCost}, have ${station.points})`,
-    })
-  }
 
   // หา receivers ทั้งหมดพร้อมกัน
   const receivers = await prisma.appUser.findMany({
@@ -46,7 +39,10 @@ export async function giveBulkPoints(
     return reply.code(400).send({ error: `Invalid or non-FRESHY codes: ${invalidCodes.join(", ")}` })
   }
 
-  // เช็ค limit ต่อ freshy ต่อ station (ถ้ามี config)
+  // แยกคนที่ติด limit ออก
+  let eligibleReceivers = receivers
+  let exceededCodes: string[] = []
+
   if (limitConfig?.value) {
     const maxLimit = Number(limitConfig.value)
     const totals = await prisma.pointTransaction.groupBy({
@@ -56,27 +52,41 @@ export async function giveBulkPoints(
     })
     const givenMap = new Map(totals.map((t) => [t.receiverId, t._sum.amount ?? 0]))
 
-    const exceeded = receivers.filter((r) => (givenMap.get(r.id) ?? 0) + amount > maxLimit)
-    if (exceeded.length > 0) {
-      return reply.code(400).send({
-        error: `Exceeded limit for: ${exceeded.map((r) => r.userCode).join(", ")}`,
-      })
-    }
+    eligibleReceivers = receivers.filter((r) => (givenMap.get(r.id) ?? 0) + amount <= maxLimit)
+    exceededCodes = receivers
+      .filter((r) => (givenMap.get(r.id) ?? 0) + amount > maxLimit)
+      .map((r) => r.userCode)
   }
 
-  // Atomic transaction — หักจาก pool ครั้งเดียว เพิ่มแต้มทุกคน
+  // ถ้าไม่มีใครรับได้เลย
+  if (eligibleReceivers.length === 0) {
+    return reply.code(400).send({
+      error: "All receivers have exceeded the limit",
+      exceededCodes,
+    })
+  }
+
+  const totalCost = amount * eligibleReceivers.length
+
+  if (station.points < totalCost) {
+    return reply.code(400).send({
+      error: `Not enough station pool points (need ${totalCost}, have ${station.points})`,
+    })
+  }
+
+  // Atomic transaction — หักจาก pool ครั้งเดียว เพิ่มแต้มเฉพาะคนที่ eligible
   await prisma.$transaction([
     prisma.userGroup.update({
       where: { id: station.id },
       data: { points: { decrement: totalCost } },
     }),
-    ...receivers.map((r) =>
+    ...eligibleReceivers.map((r) =>
       prisma.appUser.update({
         where: { id: r.id },
         data: { points: { increment: amount } },
       }),
     ),
-    ...receivers.map((r) =>
+    ...eligibleReceivers.map((r) =>
       prisma.pointTransaction.create({
         data: { giverId, stationId: station.id, receiverId: r.id, amount },
       }),
@@ -84,7 +94,7 @@ export async function giveBulkPoints(
   ])
 
   await Promise.all(
-    receivers.map((r) =>
+    eligibleReceivers.map((r) =>
       createAuditLog({
         actorId: giverId,
         action: "GIVE_POINTS",
@@ -94,7 +104,12 @@ export async function giveBulkPoints(
     ),
   )
 
-  return reply.send({ success: true, amount, receivers: receivers.map((r) => r.userCode) })
+  return reply.send({
+    success: true,
+    amount,
+    receivers: eligibleReceivers.map((r) => r.userCode),
+    exceededCodes,
+  })
 }
 
 export async function assignPoints(
