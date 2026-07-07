@@ -13,6 +13,7 @@ const userSelect = {
   userCode: true,
   role: true,
   major: true,
+  session: true,
   points: true,
   group: { select: { id: true, name: true, nameAlt: true, points: true } },
 } as const
@@ -31,7 +32,7 @@ export async function getAllUsers(_req: FastifyRequest, reply: FastifyReply) {
       major: true,
       session: true,
       points: true,
-      group: { select: { name: true, nameAlt: true, points: true } },
+      group: { select: { id: true, name: true, nameAlt: true, points: true } },
     },
     orderBy: { id: "asc" },
   })
@@ -40,8 +41,7 @@ export async function getAllUsers(_req: FastifyRequest, reply: FastifyReply) {
     users.map((u) => ({
       ...u,
       points: u.role !== "FRESHY" ? u.group.points : u.points,
-      group: u.group.name,
-      groupAlt: u.group.nameAlt,
+      group: { id: u.group.id, name: u.group.name, nameAlt: u.group.nameAlt },
     })),
   )
 }
