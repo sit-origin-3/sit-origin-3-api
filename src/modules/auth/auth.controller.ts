@@ -17,7 +17,7 @@ export async function login(
     where: {
       OR: [{ email: identifier }, { studentId: identifier }],
     },
-    include: { group: true },
+    include: { group: { select: { id: true, name: true, nameAlt: true, points: true } } },
   })
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -56,6 +56,7 @@ export async function login(
       nickname: user.nickname,
       role: user.role,
       group: user.group.name,
+      groupAlt: user.group.nameAlt,
       userCode: user.userCode,
       points: user.role !== "FRESHY" ? user.group.points : user.points,
     },

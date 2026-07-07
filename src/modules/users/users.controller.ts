@@ -14,7 +14,7 @@ const userSelect = {
   role: true,
   major: true,
   points: true,
-  group: { select: { id: true, name: true, points: true } },
+  group: { select: { id: true, name: true, nameAlt: true, points: true } },
 } as const
 
 // GET /users
@@ -31,7 +31,7 @@ export async function getAllUsers(_req: FastifyRequest, reply: FastifyReply) {
       major: true,
       session: true,
       points: true,
-      group: { select: { name: true, points: true } },
+      group: { select: { name: true, nameAlt: true, points: true } },
     },
     orderBy: { id: "asc" },
   })
@@ -41,6 +41,7 @@ export async function getAllUsers(_req: FastifyRequest, reply: FastifyReply) {
       ...u,
       points: u.role !== "FRESHY" ? u.group.points : u.points,
       group: u.group.name,
+      groupAlt: u.group.nameAlt,
     })),
   )
 }
@@ -48,7 +49,7 @@ export async function getAllUsers(_req: FastifyRequest, reply: FastifyReply) {
 const txPersonSelect = {
   nickname: true,
   major: true,
-  group: { select: { id: true, name: true } },
+  group: { select: { id: true, name: true, nameAlt: true } },
 } as const
 
 // GET /users/me
@@ -91,7 +92,7 @@ export async function getMe(req: FastifyRequest, reply: FastifyReply) {
   return reply.send({
     ...rest,
     points,
-    group: { id: group.id, name: group.name },
+    group: { id: group.id, name: group.name, nameAlt: group.nameAlt },
     rank,
     history,
   })
@@ -114,7 +115,7 @@ export async function getUserByCode(
       role: true,
       major: true,
       points: true,
-      group: { select: { name: true, points: true } },
+      group: { select: { name: true, nameAlt: true, points: true } },
     },
   })
 
@@ -123,5 +124,6 @@ export async function getUserByCode(
     ...user,
     points: user.role !== "FRESHY" ? user.group.points : user.points,
     group: user.group.name,
+    groupAlt: user.group.nameAlt,
   })
 }
