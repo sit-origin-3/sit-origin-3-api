@@ -1,6 +1,7 @@
 import "dotenv/config"
 import "./types/index.js"
 import Fastify from "fastify"
+import rateLimit from "@fastify/rate-limit"
 import { corsPlugin } from "./plugins/cors.js"
 import { cookiePlugin } from "./plugins/cookie.js"
 import { jwtPlugin } from "./plugins/jwt.js"
@@ -15,6 +16,7 @@ import { config } from "./config.js"
 const app = Fastify({ logger: true })
 
 await app.register(corsPlugin)
+await app.register(rateLimit, { global: false })
 await app.register(cookiePlugin)
 await app.register(jwtPlugin)
 
