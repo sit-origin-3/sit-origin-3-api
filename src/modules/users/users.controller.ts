@@ -114,8 +114,9 @@ export async function getUserByCode(
       userCode: true,
       role: true,
       major: true,
+      session: true,
       points: true,
-      group: { select: { name: true, nameAlt: true, points: true } },
+      group: { select: { id: true, name: true, nameAlt: true, points: true } },
     },
   })
 
@@ -123,7 +124,6 @@ export async function getUserByCode(
   return reply.send({
     ...user,
     points: user.role !== "FRESHY" ? user.group.points : user.points,
-    group: user.group.name,
-    groupAlt: user.group.nameAlt,
+    group: { id: user.group.id, name: user.group.name, nameAlt: user.group.nameAlt },
   })
 }
