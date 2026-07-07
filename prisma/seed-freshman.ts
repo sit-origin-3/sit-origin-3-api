@@ -143,6 +143,20 @@ async function main() {
     })
   }
 
+  // seed default configs
+  const defaultConfigs = [
+    { key: "ALLOW_GIVE_POINT", value: "true" },
+    { key: "MAX_POINTS_PER_FRESHY", value: "100" },
+    { key: "SHOW_LEADERBOARD", value: "false" },
+  ]
+  for (const cfg of defaultConfigs) {
+    await prisma.systemConfig.upsert({
+      where: { key: cfg.key },
+      update: {},
+      create: cfg,
+    })
+  }
+
   console.log("✅ Successfully inserted all mock data into the database!")
 }
 
