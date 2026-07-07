@@ -49,9 +49,10 @@ enum EventSession {
 // -----------------------------------------------------------------------------
 
 model UserGroup {
-  id     String @id @db.VarChar(10)
-  name   String @unique @db.VarChar(100)
-  points Int    @default(0)
+  id      String @id @db.VarChar(10)
+  name    String @unique @db.VarChar(100)
+  nameAlt String @map("name_alt") @db.VarChar(100)
+  points  Int    @default(0)
 
   // --- Relations ---
   users            AppUser[]

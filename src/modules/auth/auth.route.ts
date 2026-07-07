@@ -1,6 +1,5 @@
 import type { FastifyInstance } from "fastify"
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox"
-import rateLimit from "@fastify/rate-limit"
 import * as controller from "./auth.controller.js"
 import * as schema from "./auth.schema.js"
 
@@ -16,9 +15,6 @@ export async function authRoutes(app: FastifyInstance) {
         rateLimit: {
           max: 10,
           timeWindow: "1 minute",
-          errorResponseBuilder: () => ({
-            error: "Too many login attempts, please try again later",
-          }),
         },
       },
     },

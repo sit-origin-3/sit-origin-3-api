@@ -45,33 +45,33 @@ function toGroupId(raw: string): string {
 
 const STATION_POOL_POINTS = 4000
 
-const GROUP_DEFINITIONS: { id: string; name: string; points: number }[] = [
-  { id: "A1", name: "CHEETAH",      points: 0 },
-  { id: "A2", name: "HORSE",        points: 0 },
-  { id: "A3", name: "SHEEP",        points: 0 },
-  { id: "A4", name: "SNAKE",        points: 0 },
-  { id: "A5", name: "GAZELLE",      points: 0 },
-  { id: "B1", name: "FENNEC FOX",   points: 0 },
-  { id: "B2", name: "SLOTH",        points: 0 },
-  { id: "B3", name: "BEAVER",       points: 0 },
-  { id: "B4", name: "ARCTIC SHREW", points: 0 },
-  { id: "B5", name: "QUOKKA",       points: 0 },
-  { id: "S1", name: "สืบคดี", points: STATION_POOL_POINTS },
-  { id: "S2", name: "สปาย", points: STATION_POOL_POINTS },
-  { id: "S3", name: "ทำตามพี่บอก", points: STATION_POOL_POINTS },
-  { id: "S4", name: "วาดแล้วเล่า", points: STATION_POOL_POINTS },
-  { id: "S5", name: "ต่อกระดาษ", points: STATION_POOL_POINTS },
-  { id: "I1", name: "ใบ้คำ", points: STATION_POOL_POINTS },
-  { id: "I2", name: "นับเลขเปลี่ยนคำ", points: STATION_POOL_POINTS },
-  { id: "ADMIN", name: "ADMIN", points: 0 },
+const GROUP_DEFINITIONS: { id: string; name: string; nameAlt: string; points: number }[] = [
+  { id: "A1", name: "CHEETAH",      nameAlt: "CHEETAH",           points: 0 },
+  { id: "A2", name: "HORSE",        nameAlt: "HORSE",             points: 0 },
+  { id: "A3", name: "SHEEP",        nameAlt: "SHEEP",             points: 0 },
+  { id: "A4", name: "SNAKE",        nameAlt: "SNAKE",             points: 0 },
+  { id: "A5", name: "GAZELLE",      nameAlt: "GAZELLE",           points: 0 },
+  { id: "B1", name: "FENNEC FOX",   nameAlt: "FENNEC FOX",        points: 0 },
+  { id: "B2", name: "SLOTH",        nameAlt: "SLOTH",             points: 0 },
+  { id: "B3", name: "BEAVER",       nameAlt: "BEAVER",            points: 0 },
+  { id: "B4", name: "ARCTIC SHREW", nameAlt: "ARCTIC SHREW",      points: 0 },
+  { id: "B5", name: "QUOKKA",       nameAlt: "QUOKKA",            points: 0 },
+  { id: "S1", name: "สืบคดี",       nameAlt: "Find the Truth",    points: STATION_POOL_POINTS },
+  { id: "S2", name: "สปาย",         nameAlt: "Spy",               points: STATION_POOL_POINTS },
+  { id: "S3", name: "ทำตามพี่บอก",  nameAlt: "Do as I Say",       points: STATION_POOL_POINTS },
+  { id: "S4", name: "วาดแล้วเล่า",  nameAlt: "Draw & Tell",       points: STATION_POOL_POINTS },
+  { id: "S5", name: "ต่อกระดาษ",    nameAlt: "Paperpal",          points: STATION_POOL_POINTS },
+  { id: "I1", name: "ใบ้คำ",        nameAlt: "Act it Out!",       points: STATION_POOL_POINTS },
+  { id: "I2", name: "นับเลขเปลี่ยนคำ", nameAlt: "Not Really a Ten", points: STATION_POOL_POINTS },
+  { id: "ADMIN", name: "ADMIN",     nameAlt: "ADMIN",             points: 0 },
 ]
 
 async function seedGroups() {
   for (const g of GROUP_DEFINITIONS) {
     await prisma.userGroup.upsert({
       where: { id: g.id },
-      update: { name: g.name },
-      create: { id: g.id, name: g.name, points: g.points },
+      update: { name: g.name, nameAlt: g.nameAlt },
+      create: { id: g.id, name: g.name, nameAlt: g.nameAlt, points: g.points },
     })
   }
   console.log("✅ UserGroups seeded")
