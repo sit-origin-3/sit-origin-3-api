@@ -7,5 +7,5 @@ export const GiveBulkPointsBody = Type.Object({
 
 export const AssignPointsBody = Type.Object({
   userCode: Type.String({ minLength: 4, maxLength: 4 }),
-  amount: Type.Number({ minimum: 1 }),
+  amount: Type.Number({ minimum: 0 }),
 })
