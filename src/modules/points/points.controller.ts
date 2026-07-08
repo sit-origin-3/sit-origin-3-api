@@ -27,9 +27,22 @@ export async function giveBulkPoints(
 
   const station = giver.group
 
-  // หา receivers ทั้งหมดพร้อมกัน
+  // หา receivers ทั้งหมดพร้อมกัน (ดึงข้อมูลแบบ getMe ไว้ส่งกลับตอนติด limit)
   const receivers = await prisma.appUser.findMany({
     where: { userCode: { in: receiverCodes }, role: "FRESHY" },
+    select: {
+      id: true,
+      email: true,
+      firstname: true,
+      lastname: true,
+      nickname: true,
+      userCode: true,
+      role: true,
+      major: true,
+      session: true,
+      points: true,
+      group: { select: { id: true, name: true, nameAlt: true } },
+    },
   })
 
   // เช็คว่า code ทุกตัวเจอและเป็น FRESHY
@@ -41,7 +54,7 @@ export async function giveBulkPoints(
 
   // แยกคนที่ติด limit ออก
   let eligibleReceivers = receivers
-  let exceededCodes: string[] = []
+  let exceeded: ((typeof receivers)[number] & { remaining: number })[] = []
 
   if (limitConfig?.value) {
     const maxLimit = Number(limitConfig.value)
@@ -53,16 +66,19 @@ export async function giveBulkPoints(
     const givenMap = new Map(totals.map((t) => [t.receiverId, t._sum.amount ?? 0]))
 
     eligibleReceivers = receivers.filter((r) => (givenMap.get(r.id) ?? 0) + amount <= maxLimit)
-    exceededCodes = receivers
+    exceeded = receivers
       .filter((r) => (givenMap.get(r.id) ?? 0) + amount > maxLimit)
-      .map((r) => r.userCode)
+      .map((r) => ({
+        ...r,
+        remaining: Math.max(0, maxLimit - (givenMap.get(r.id) ?? 0)),
+      }))
   }
 
   // ถ้าไม่มีใครรับได้เลย
   if (eligibleReceivers.length === 0) {
     return reply.code(400).send({
       error: "All receivers have exceeded the limit",
-      exceededCodes,
+      exceeded,
     })
   }
 
@@ -108,7 +124,7 @@ export async function giveBulkPoints(
     success: true,
     amount,
     receivers: eligibleReceivers.map((r) => r.userCode),
-    exceededCodes,
+    exceeded,
   })
 }
 
