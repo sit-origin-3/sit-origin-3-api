@@ -8,8 +8,10 @@ export async function getLeaderboardData() {
       firstname: true,
       lastname: true,
       nickname: true,
+      userCode: true,
+      major: true,
       points: true,
-      group: { select: { name: true } },
+      group: { select: { id: true, name: true } },
     },
     orderBy: { points: "desc" },
     take: 20,
@@ -17,7 +19,7 @@ export async function getLeaderboardData() {
 
   return users.map((u) => {
     const { group, ...rest } = u
-    return { ...rest, group: group.name }
+    return { ...rest, group: group.name, groupId: group.id }
   })
 }
 
