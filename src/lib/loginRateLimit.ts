@@ -1,8 +1,8 @@
 // Rate limit การ login ต่อ identifier (studentId/email) — เก็บใน memory
 // ใช้ identifier แทน IP เพราะผู้ใช้อาจอยู่หลัง WiFi/NAT เดียวกัน (public IP เดียวกัน)
 
-const MAX_ATTEMPTS = 10
-const WINDOW_MS = 5 * 60 * 1000 // 5 นาที
+const MAX_ATTEMPTS = 30
+const WINDOW_MS = 2 * 60 * 1000 // 5 นาที
 
 type Entry = { count: number; resetAt: number }
 const store = new Map<string, Entry>()
