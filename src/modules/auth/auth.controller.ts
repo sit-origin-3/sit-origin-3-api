@@ -4,6 +4,7 @@ import bcrypt from "bcrypt"
 import { prisma } from "../../db.js"
 import { config } from "../../config.js"
 import { createAuditLog } from "../../lib/audit.js"
+import { checkLoginRateLimit, resetLoginRateLimit } from "../../lib/loginRateLimit.js"
 import type { LoginBody } from "./auth.schema.js"
 
 // POST /auth/login
@@ -12,6 +13,13 @@ export async function login(
   reply: FastifyReply
 ) {
   const { identifier, password } = req.body
+
+  // rate limit ต่อ identifier — กัน brute force ต่อ 1 บัญชี โดยไม่กระทบคนอื่นในวง WiFi เดียวกัน
+  if (!checkLoginRateLimit(identifier)) {
+    return reply.code(429).send({
+      error: "Too many login attempts, please try again in a few minutes",
+    })
+  }
 
   const user = await prisma.appUser.findFirst({
     where: {
@@ -31,6 +39,9 @@ export async function login(
     }
     return reply.code(401).send({ error: "Invalid credentials" })
   }
+
+  // login สำเร็จ — รีเซ็ต counter ให้บัญชีนี้
+  resetLoginRateLimit(identifier)
 
   await createAuditLog({ actorId: user.id, action: "LOGIN" })
 
