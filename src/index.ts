@@ -13,7 +13,9 @@ import { configsRoutes } from "./modules/configs/configs.route.js"
 import { auditsRoutes } from "./modules/audits/audits.route.js"
 import { config } from "./config.js"
 
-const app = Fastify({ logger: true })
+// trustProxy: true — ให้ Fastify อ่าน real IP จาก X-Forwarded-For ที่ nginx ส่งมา
+// (จำเป็นสำหรับ rate limit ให้นับ per user ไม่ใช่ per proxy IP)
+const app = Fastify({ logger: true, trustProxy: true })
 
 await app.register(corsPlugin)
 await app.register(rateLimit, { global: false })
