@@ -11,15 +11,6 @@ export async function authRoutes(app: FastifyInstance) {
     "/login",
     {
       schema: { body: schema.LoginBody },
-      config: {
-        rateLimit: {
-          max: 10,
-          timeWindow: "5 minute",
-          errorResponseBuilder: (_req: FastifyRequest) => ({
-            error: "Too many login attempts, please try again in a few minutes",
-          }),
-        },
-      },
     },
     controller.login,
   )
